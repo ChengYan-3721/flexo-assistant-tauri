@@ -1,6 +1,6 @@
 {
     "$schema": "https://schema.tauri.app/config/2",
-    "productName": "flexo-assistant",
+    "productName": "柔印印前排版小助手",
     "version": "0.1.0",
     "identifier": "com.flexo-assistant.app",
     "build": {
@@ -12,10 +12,14 @@
     "app": {
         "windows": [
             {
+                "label": "柔印印前排版小助手",
                 "title": "柔印印前排版小助手",
-                "resizable": false,
+                "center": true,
+                "maximizable": false,
                 "width": 420,
-                "height": 660
+                "minWidth": 420,
+                "height": 680,
+                "minHeight": 680
             }
         ],
         "security": {
