@@ -1,16 +1,15 @@
-# Tauri + Vue + TypeScript
-
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
-
-## Recommended IDE Setup
-
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
-
-## Type Support For `.vue` Imports in TS
-
-Since TypeScript cannot handle type information for `.vue` imports, they are shimmed to be a generic Vue component type by default. In most cases this is fine if you don't really care about component prop types outside of templates. However, if you wish to get actual prop types in `.vue` imports (for example to get props validation when using manual `h(...)` calls), you can enable Volar's Take Over mode by following these steps:
-
-1. Run `Extensions: Show Built-in Extensions` from VS Code's command palette, look for `TypeScript and JavaScript Language Features`, then right click and select `Disable (Workspace)`. By default, Take Over mode will enable itself if the default TypeScript extension is disabled.
-2. Reload the VS Code window by running `Developer: Reload Window` from the command palette.
-
-You can learn more about Take Over mode [here](https://github.com/johnsoncodehk/volar/discussions/471).
+### 正式版功能：
+    1. 柔印变形率计算：
+        - 通用算法，支持自定义K值。
+        - 支持记录客户印刷机版辊的误差，计算纠正误差后的变形率。
+        - 支持记录客户印刷机所有版辊参数及相对应变形率。
+    2. 拼版计算：
+        - 根据单模大小（周长方向）计算误差最小、最接近的印刷周长。
+        - 计算结果中包含均分跳距、与原尺寸相比的误差、出血（双刀排版时周长方向的出血大小）。
+    3. 待办事项：
+        - 待办内容创建后默认为未完成状态，可以进行二次编辑。
+        - 待办内容标记为完成后无法进行编辑，可以撤销操作回到未完成状态。
+        - 支持一键清空（删除）所有已完成的待办。
+        - 删除时不会提示，无法恢复。
+        - 在新建和二次编辑时均可将该条待办设置为笔记，笔记支持编辑，但无法删除；若要删除需要编辑笔记，关闭笔记属性，回到待办中去删除。
+    4. 仅支持 Windows10 及以上操作系统(Windows7 需要自行安装 Microsoft Edge WebView2)。
