@@ -1,18 +1,15 @@
 <script setup lang="ts">
-import {reactive, Reactive, ref, watch} from "vue";
+import {reactive, ref, watch} from "vue";
 import Decimal from "decimal.js";
 
-const precision = defineModel("precision", {
-    required: true,
-    type: Number
-});
+const precision = defineModel<number>("precision", {required: true});
 const single = ref("");
 const spacing = ref("");
 const jump = ref("");
 const pitch = ref("3.175");
 let singleChanged = true;
 let spacingChanged = true;
-const tableData: Reactive<[number, string, string, string, string, string][]> = reactive([]);
+const tableData = reactive<[number, string, string, string, string, string, string][]>([]);
 
 // 四舍五入
 const round = (num: Decimal) => {
@@ -53,27 +50,30 @@ const computeTableData = () => {
         let length = round(Decimal.mul(jump.value, i));
         let gears = Decimal.div(length, pitch.value).round();
         if (gears.toNumber() < 50) continue;
-        let approximate = round(Decimal.div(Decimal.mul(gears, pitch.value), i));
+        let girth = Decimal.mul(gears, pitch.value);
+        let approximate = round(Decimal.div(girth, i));
         let deviation = round(Decimal.abs(Decimal.sub(approximate, jump.value)));
         let space = round(Decimal.sub(approximate, single.value || 0));
         let bleed = round(Decimal.div(space, 2));
         let gears0 = Decimal.sub(gears, 1);
-        let approximate0 = round(Decimal.div(Decimal.mul(gears0, pitch.value), i));
+        let girth0 = Decimal.mul(gears0, pitch.value);
+        let approximate0 = round(Decimal.div(girth0, i));
         let deviation0 = round(Decimal.abs(Decimal.sub(approximate0, jump.value)));
         if (Decimal.abs(Decimal.sub(deviation0, deviation)).toNumber() < 0.1) {
             let space0 = round(Decimal.sub(approximate0, single.value || 0));
             let bleed0 = round(Decimal.div(space0, 2));
-            tableData.push([i, gears0 + "T", approximate0, deviation0, space0, bleed0]);
-            tableData.push([i, gears + "T", approximate, deviation, space, bleed]);
+            tableData.push([i, gears0 + "T", approximate0, deviation0, space0, bleed0, girth0.toString()]);
+            tableData.push([i, gears + "T", approximate, deviation, space, bleed, girth.toString()]);
         } else {
-            tableData.push([i, gears + "T", approximate, deviation, space, bleed]);
+            tableData.push([i, gears + "T", approximate, deviation, space, bleed, girth.toString()]);
             let gears2 = Decimal.add(gears, 1);
-            let approximate2 = round(Decimal.div(Decimal.mul(gears2, pitch.value), i));
+            let girth2 = Decimal.mul(gears2, pitch.value);
+            let approximate2 = round(Decimal.div(girth2, i));
             let deviation2 = round(Decimal.abs(Decimal.sub(approximate2, jump.value)));
             if (Decimal.abs(Decimal.sub(deviation2, deviation)).toNumber() < 0.1) {
                 let space2 = round(Decimal.sub(approximate2, single.value || 0));
                 let bleed2 = round(Decimal.div(space2, 2));
-                tableData.push([i, gears2 + "T", approximate2, deviation2, space2, bleed2]);
+                tableData.push([i, gears2 + "T", approximate2, deviation2, space2, bleed2, girth2.toString()]);
             }
         }
     }
@@ -82,6 +82,16 @@ const computeTableData = () => {
 watch(precision, () => {
     computeTableData();
 })
+
+// 复制到系统剪贴板
+const coped = ref(false);
+const copy = (value: string) => {
+    navigator.clipboard.writeText(value);
+    coped.value = true;
+    setTimeout(() => {
+        coped.value = false;
+    }, 1500);
+}
 </script>
 
 <template>
@@ -122,8 +132,12 @@ watch(precision, () => {
                 </thead>
                 <tbody>
                 <tr v-for="item in tableData">
-                    <th>{{ item[0] }}</th>
-                    <td>{{ item[1] }}</td>
+                    <td>{{ item[0] }}</td>
+                    <td>
+                        <div class="tooltip tooltip-info tooltip-right" :data-tip="item[6]+'mm'" @click="copy(item[6])">
+                            {{ item[1] }}
+                        </div>
+                    </td>
                     <td>{{ item[2] }}</td>
                     <td>{{ item[3] }}</td>
                     <td>{{ single? item[4] : "-" }}</td>
@@ -132,5 +146,13 @@ watch(precision, () => {
                 </tbody>
             </table>
         </div>
+    </div>
+    <div v-if="coped" role="alert"
+         class="fixed top-1/3 left-1/2 -translate-y-1/2 -translate-x-1/2 alert alert-success alert-soft">
+        <svg class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span>已复制到剪贴板！</span>
     </div>
 </template>

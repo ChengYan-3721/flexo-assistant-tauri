@@ -11,6 +11,7 @@ const precision = ref(4);
 const userKMap = ref("");
 const appTab = ref("distortionRate");
 const distortionRateTab = ref("通用");
+const todoTab = ref("全部");
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 invoke("get_config").then((config: any) => {
@@ -19,6 +20,7 @@ invoke("get_config").then((config: any) => {
     userKMap.value = config.k_map;
     appTab.value = config.app_tab;
     distortionRateTab.value = config.distortion_rate_tab;
+    todoTab.value = config.todo_tab;
 })
 const handleContextMenu = (e: Event) => {
     e.preventDefault();  // 阻止默认右键菜单
@@ -34,6 +36,7 @@ once("save-config", () => {
             k_map: userKMap.value,
             app_tab: appTab.value,
             distortion_rate_tab: distortionRateTab.value,
+            todo_tab: todoTab.value,
         }
     }).finally(() => {
         emit("config-saved");
@@ -54,7 +57,7 @@ once("save-config", () => {
         </div>
         <input type="radio" name="app" class="tab" aria-label="待办事项" value="todo" v-model="appTab"/>
         <div class="tab-content">
-            <Todo/>
+            <Todo v-model:todoTab="todoTab"/>
         </div>
     </div>
     <div class="w-31 fixed top-2 right-11 flex flex-row items-center">

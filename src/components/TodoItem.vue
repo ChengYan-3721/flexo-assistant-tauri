@@ -1,35 +1,36 @@
 <script setup lang="ts">
-const color = defineModel("color", {
-    required: true,
-    type: String
-});
-const content = defineModel("content", {
-    required: true,
-    type: String
-});
-const finished = defineModel("finished", {
-    required: true,
-    type: Boolean
-});
-defineEmits(["editTodo", "changeState", "removeTodo"]);
+const content = defineModel<string>("content", {required: true});
+const top = defineModel<boolean>("top", {required: true});
+const finished = defineModel<boolean>("finished", {required: true});
+const note = defineModel<boolean>("note", {required: true});
+defineEmits(["editTodo", "changeTop", "changeState", "removeTodo"]);
 </script>
 
 <template>
-    <div role="alert" :class="color">
+    <div role="alert" :class="'alert alert-soft flex text-sm p-1 '+(note? 'alert-info' : (finished? 'alert-success' : 'alert-warning'))">
         <pre class="grow self-start break-all text-wrap">{{ content }}</pre>
         <div class="flex-none self-start">
             <button v-if="!finished" class="btn btn-square btn-xs" @click="$emit('editTodo')">
-                <svg class="icon" viewBox="-150 -150 1300 1300" xmlns="http://www.w3.org/2000/svg">
-                    <g stroke-linejoin="round" stroke-linecap="round" stroke-width="40" fill="none"
-                       stroke="currentColor">
-                        <path
-                            d="M806 911H218c-57.9 0-105-47.1-105-105V218c0-57.9 47.1-105 105-105h349.4c11.6 0 21 9.4 21 21s-9.4 21-21 21H218c-34.7 0-63 28.3-63 63v588c0 34.7 28.3 63 63 63h588c34.7 0 63-28.3 63-63V457c0-11.6 9.4-21 21-21s21 9.4 21 21v349c0 57.9-47.1 105-105 105z"></path>
-                        <path
-                            d="M896.6 129c8.2 8.2 8.2 21.5 0 29.7L525.3 529.9c-8.2 8.2-21.5 8.2-29.7 0s-8.2-21.5 0-29.7L866.9 129c8.1-8.2 21.5-8.2 29.7 0z"></path>
-                    </g>
+                <svg class="icon" fill="currentColor" viewBox="-150 -150 1300 1300" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M806 911H218c-57.9 0-105-47.1-105-105V218c0-57.9 47.1-105 105-105h349.4c11.6 0 21 9.4 21 21s-9.4 21-21 21H218c-34.7 0-63 28.3-63 63v588c0 34.7 28.3 63 63 63h588c34.7 0 63-28.3 63-63V457c0-11.6 9.4-21 21-21s21 9.4 21 21v349c0 57.9-47.1 105-105 105z"></path>
+                    <path
+                        d="M896.6 129c8.2 8.2 8.2 21.5 0 29.7L525.3 529.9c-8.2 8.2-21.5 8.2-29.7 0s-8.2-21.5 0-29.7L866.9 129c8.1-8.2 21.5-8.2 29.7 0z"></path>
                 </svg>
             </button>
-            <button class="btn btn-square btn-xs" @click="$emit('changeState')">
+            <button v-if="top" class="btn btn-square btn-xs btn-active text-red-600" @click="$emit('changeTop')">
+                <svg class="size-[1.2em]" fill="currentColor" viewBox="100 100 800 800"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <path d="M832 640h-96L671.68 128h64V64H287.36v64h64.96L288 640H192v64h288v256h64v-256h288z"></path>
+                </svg>
+            </button>
+            <button v-else class="btn btn-square btn-xs" @click="$emit('changeTop')">
+                <svg class="size-[1.2em]" fill="currentColor" viewBox="100 100 800 800"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <path d="M893.805714 455.363048l-125.805714 13.970285-128 128-15.993905 207.969524c-2.096762 27.257905-35.206095 39.497143-54.54019 20.163048l-164.717715-164.717715-213.333333 213.333334-41.496381-41.496381 213.333334-213.333333-186.051048-186.051048c-19.334095-19.334095-7.070476-52.419048 20.163048-54.540191l207.969523-15.993904 128-128 28.964572-115.833905a32.01219 32.01219 0 0 1 53.662476-14.872381l296.96 296.96c18.968381 18.968381 7.558095 51.46819-19.090286 54.442667z m-152.746666-42.057143l91.136-10.142476-224.402286-224.402286-21.479619 85.894095-154.819048 154.819048-171.812571 13.238857 310.272 310.272 13.214476-171.788191 157.891048-157.891047z"></path>
+                </svg>
+            </button>
+            <button v-if="!note" class="btn btn-square btn-xs" @click="$emit('changeState')">
                 <svg v-if="!finished" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 21 21"
                      stroke-width="2.5"
                      stroke="#00D390" class="size-[1.2em]">
@@ -46,7 +47,7 @@ defineEmits(["editTodo", "changeState", "removeTodo"]);
                     </g>
                 </svg>
             </button>
-            <button class="btn btn-square btn-xs text-red-600" @click="$emit('removeTodo')">✘</button>
+            <button v-if="!note" class="btn btn-square btn-xs text-red-600" @click="$emit('removeTodo')">✘</button>
         </div>
     </div>
 </template>

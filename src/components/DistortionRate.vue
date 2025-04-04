@@ -1,22 +1,16 @@
 <script setup lang="ts">
-import {Reactive, reactive, Ref, ref, watch} from "vue";
+import {reactive, ref, watch} from "vue";
 import Decimal from "decimal.js";
 import BareRoll from "./BareRoll.vue";
+import FixedRules from "./FixedRules.vue";
+import {invoke} from "@tauri-apps/api/core";
+import TrimmerRules from "./TrimmerRules.vue";
 
-const precision = defineModel("precision", {
-    required: true,
-    type: Number
-});
-const userKMap = defineModel("userKMap", {
-    required: true,
-    type: String
-});
-const distortionRateTab = defineModel("distortionRateTab", {
-    required: true,
-    type: String
-});
-const setKVDialog: Ref<HTMLDialogElement | undefined, HTMLDialogElement | undefined> = ref();
-const bareRollDialog: Ref<HTMLDialogElement | undefined, HTMLDialogElement | undefined> = ref();
+const precision = defineModel<number>("precision", {required: true});
+const userKMap = defineModel<string>("userKMap", {required: true});
+const distortionRateTab = defineModel<string>("distortionRateTab", {required: true});
+const setKVDialog = ref<HTMLDialogElement>();
+const bareRollDialog = ref<HTMLDialogElement>();
 const coped = ref(false);
 const gears = ref("");  // 齿数
 const pitch = ref("3.175");  // 齿距
@@ -26,8 +20,7 @@ const distortionRate = ref("0");  // 变形率
 const count = ref("");  // 模数
 const before = ref(""); // 变形前
 const after = ref("");  // 变形后
-const normalAfter = ref("");  // 正常变形后
-const deviation = ref("");  // 误差微调
+const trimmer = ref("");  // 误差微调
 let toGirth = true;
 let toAfter = false;
 const defaultK_map = new Map([
@@ -40,12 +33,12 @@ const defaultK_map = new Map([
     ["0.95", 540],
 ])
 let k_map: Map<string, number> = new Map(JSON.parse(JSON.stringify(Array.from(defaultK_map.entries()))));
-const userK_map: Reactive<any> = reactive({})
+const userK_map = reactive<any>({})
 // 读取到 userKMap 后将数据写入 userK_map
 watch(userKMap, () => {
     Object.assign(userK_map, JSON.parse(userKMap.value));
 }, {once: true})
-const tableData: Reactive<[number, string, string][]> = reactive([]);
+const tableData = reactive<[number, string, string][]>([]);
 for (let i = 0; i < 10; i++) {
     tableData.push([i + 1, "", ""]);
 }
@@ -95,14 +88,16 @@ const girthChange = () => {
 // 计算变形率
 const computeDistortionRate = () => {
     if (!girth.value) return;
-    let num = Number(girth.value);
-    if (!num) return;
-    let k = k_map.get(thickness.value) || 0;
-    distortionRate.value = round(Decimal.sub(100, Decimal.div(k, num)));
-    if (distortionRateTab.value === "例外" && deviation.value) {
-        normalAfter.value = round(Decimal.mul(girth.value, Decimal.div(distortionRate.value, 100)));
-        let newAfter = Decimal.add(normalAfter.value, deviation.value);
-        distortionRate.value = round(Decimal.mul(100, Decimal.div(newAfter, girth.value)));
+    if (distortionRateTab.value !== "固定") {
+        let num = Number(girth.value);
+        if (!num) return;
+        let k = k_map.get(thickness.value) || 0;
+        distortionRate.value = round(Decimal.sub(100, Decimal.div(k, num)));
+        if (distortionRateTab.value === "微调" && trimmer.value) {
+            const normalAfter = Decimal.mul(girth.value, Decimal.div(distortionRate.value, 100));
+            const newAfter = Decimal.add(normalAfter, trimmer.value);
+            distortionRate.value = round(Decimal.mul(100, Decimal.div(newAfter, girth.value)));
+        }
     }
     if (toAfter) {
         computeAfter();
@@ -204,24 +199,62 @@ const recalculate = () => {
 }
 // 改变小数位数时重新计算
 watch([precision, distortionRateTab], () => {
-    if (distortionRateTab.value === "通用") {
-        recalculate();
-    }
+    recalculate();
 })
 
-const client: Ref<string[], string[]> = ref([]);
-const clients = reactive({
-    a: ["70", "80", "95", "100", "101", "120", "132"],
-    b: ["71", "81", "95", "100", "101", "120", "132"],
-    c: ["72", "82", "95", "100", "101", "120", "132"],
-    d: ["73", "83", "95", "100", "101", "120", "132"],
-    f: ["74", "84", "95", "100", "101", "120", "132"],
-});
+export interface Client {
+    id?: number;
+    name: string;
+    trimmer_data: TrimmerData[];
+    fixed_data: FixedData[];
+}
+
+export interface TrimmerData {
+    machine?: string;
+    width?: string;
+    thickness?: string;
+    trimmer?: string;
+    note?: string;
+}
+
+export interface FixedData {
+    machine?: string;
+    width?: string;
+    gears?: string;
+    pitch?: string;
+    girth?: string;
+    count?: string;
+    thickness?: string;
+    distortion_rate?: string;
+    note?: string;
+}
+
+const clients = reactive<Client[]>([]);
+const trimmerData = ref<TrimmerData[]>();
+const trimmerDataItem = ref<TrimmerData>({});
+const fixedData = ref<FixedData[]>();
+const fixedDataItem = ref<FixedData>({});
+
+invoke("get_clients").then((res: any) => {
+    Object.assign(clients, res);
+})
+
+const fixedDataChange = () => {
+    girth.value = fixedDataItem.value.girth || "";
+    distortionRate.value = fixedDataItem.value.distortion_rate || "0";
+    girthChange();
+}
+const trimmerDataChange = (clientChange: boolean) => {
+    if (clientChange) trimmerDataItem.value = trimmerData.value ? trimmerData.value[0] : {};
+    trimmer.value = trimmerDataItem.value.trimmer || "";
+    girthChange();
+}
 </script>
 
 <template>
     <div role="tablist" class="tabs tabs-border tabs-sm">
-        <input type="radio" name="distortionRate" class="tab" aria-label="通用" value="通用" v-model="distortionRateTab"/>
+        <input type="radio" name="distortionRate" class="tab" aria-label="通用" value="通用"
+               v-model="distortionRateTab"/>
         <div class="tab-content p-3">
             <div class="grid grid-cols-24 gap-x-2 gap-y-4 items-center">
                 <label class="col-span-5 text-sm">齿数</label>
@@ -274,52 +307,59 @@ const clients = reactive({
                 </div>
             </div>
         </div>
-        <input type="radio" name="distortionRate" class="tab" aria-label="例外" value="例外" v-model="distortionRateTab"/>
+        <input type="radio" name="distortionRate" class="tab" aria-label="微调" value="微调"
+               v-model="distortionRateTab"/>
         <div class="tab-content p-3">
             <div class="grid grid-cols-24 gap-x-2 gap-y-4 items-center">
-                <label class="col-span-5 text-sm">客户</label>
-                <select class="col-span-8 select select-xs w-30" v-model="client">
-                    <option v-for="(v, k) in clients" :label="k" :value="v"/>
+                <label class="col-span-4 text-sm">客户</label>
+                <select class="col-span-8 select select-xs w-30" v-model="trimmerData"
+                        @change="trimmerDataChange(true)">
+                    <option v-for="client in clients" v-show="client.trimmer_data.length" :label="client.name" :value="client.trimmer_data"/>
+                </select>
+                <label class="col-span-4 text-sm">印刷机</label>
+                <select class="col-span-8 select select-xs" v-model="trimmerDataItem"
+                        @change="trimmerDataChange(false)">
+                    <option v-for="item in trimmerData" :label="item.machine" :value="item"/>
                 </select>
                 <label class="col-span-4 text-sm">齿数</label>
-                <label class="col-span-7 input input-xs">
+                <label class="col-span-8 input input-xs w-30">
                     <input type="number" v-model="gears" @input="gearsChange"/>
                     T
                 </label>
-                <label class="col-span-5 text-sm" @click="copy(girth)">版辊周长</label>
-                <label class="col-span-8 input input-xs w-30">
+                <label class="col-span-4 text-sm" @click="copy(girth)">版辊周长</label>
+                <label class="col-span-8 input input-xs">
                     <input type="number" v-model="girth" @input="girthChange"/>
                     mm
                 </label>
-                <label class="col-span-4 text-sm">正常变形</label>
-                <kbd class="col-span-7 kbd kbd-md w-27">{{ normalAfter }} mm</kbd>
-                <label class="col-span-5 text-sm">误差微调</label>
+                <label class="col-span-4 text-sm">误差微调</label>
                 <label class="col-span-8 input input-xs w-30">
-                    <input type="number" v-model="deviation"/>
+                    <input type="number" step="0.1" v-model="trimmer"/>
                     mm
                 </label>
                 <label class="col-span-4 text-sm text-red-500" @click="copy(distortionRate)">变形率</label>
-                <kbd class="col-span-7 text-red-500 kbd kbd-md w-27">{{ distortionRate }} %</kbd>
+                <kbd class="col-span-8 text-red-500 kbd kbd-md">{{ distortionRate }} %</kbd>
             </div>
         </div>
-        <input type="radio" name="distortionRate" class="tab" aria-label="固定" value="固定" v-model="distortionRateTab"/>
+        <input type="radio" name="distortionRate" class="tab" aria-label="固定" value="固定"
+               v-model="distortionRateTab"/>
         <div class="tab-content p-3">
             <div class="grid grid-cols-24 gap-x-2 gap-y-4 items-center">
                 <label class="col-span-5 text-sm">客户</label>
-                <select class="col-span-8 select select-xs w-30" v-model="client">
-                    <option v-for="(v, k) in clients" :label="k" :value="v"/>
+                <select class="col-span-8 select select-xs w-30" v-model="fixedData"
+                        @change="()=>{fixedDataItem={};fixedDataChange()}">
+                    <option v-for="client in clients" v-show="client.fixed_data.length" :label="client.name" :value="client.fixed_data"/>
                 </select>
                 <label class="col-span-4 text-sm">齿数</label>
-                <select class="col-span-7 select select-xs" v-model="gears" @change="gearsChange">
-                    <option v-for="item in client" :label="item + 'T'" :value="item"/>
+                <select class="col-span-7 select select-xs" v-model="fixedDataItem" @change="fixedDataChange">
+                    <option v-for="item in fixedData" :label="item.gears + 'T'" :value="item"/>
                 </select>
                 <label class="col-span-5 text-sm" @click="copy(girth)">版辊周长</label>
-                <label class="col-span-8 input input-xs w-30">
-                    <input type="number" v-model="girth" @input="girthChange"/>
-                    mm
-                </label>
-                <label class="col-span-4 text-sm text-red-500" @click="copy(distortionRate)">变形率</label>
-                <kbd class="col-span-7 text-red-500 kbd kbd-md w-27">{{ distortionRate }} %</kbd>
+                <select class="col-span-8 select select-xs w-30" v-model="fixedDataItem" @change="fixedDataChange">
+                    <option v-for="item in fixedData" :label="item.girth + ' mm'" :value="item"/>
+                </select>
+                <label class="col-span-4 text-sm text-red-500"
+                       @click="copy(fixedDataItem.distortion_rate || '')">变形率</label>
+                <kbd class="col-span-7 text-red-500 kbd kbd-md w-27">{{ fixedDataItem.distortion_rate }} %</kbd>
             </div>
         </div>
     </div>
@@ -334,10 +374,10 @@ const clients = reactive({
             </thead>
             <tbody>
             <tr>
-                <th>
+                <td>
                     <input class="input input-xs w-18 justify-items-center" v-model="count"
                            @input="countChange"/>
-                </th>
+                </td>
                 <td>
                     <input class="input input-xs w-32" type="number" v-model="before"
                            @input="computeAfter"/>
@@ -348,15 +388,13 @@ const clients = reactive({
                 </td>
             </tr>
             <tr v-for="item in tableData">
-                <th>{{ item[0] }}</th>
+                <td>{{ item[0] }}</td>
                 <td>{{ item[1] }}</td>
                 <td>{{ item[2] }}</td>
             </tr>
             </tbody>
         </table>
     </div>
-    <button v-if="distortionRateTab==='例外'" class="btn btn-outline btn-primary btn-xs fixed top-10 right-3">管理例外规则
-    </button>
     <button v-if="distortionRateTab==='通用'" class="btn btn-outline btn-primary btn-xs fixed top-10 right-23"
             @click="setKVDialog?.showModal()">K值设置
     </button>
@@ -377,7 +415,7 @@ const clients = reactive({
             <h6 class="text-lg font-bold">常量K值设置</h6>
             <p class="text-sm">输入数字后自动保存，留空保持默认</p>
             <label v-for="item in defaultK_map" class="input input-sm">
-                <span class="label w-18">{{ item[0] }}</span>
+                <span class="w-18">{{ item[0] }}</span>
                 <input type="number" :placeholder="'默认值：'+ item[1]" v-model="userK_map[item[0]]"
                        @change="setK_map(item[0], userK_map[item[0]], item[1])"/>
             </label>
@@ -396,6 +434,16 @@ const clients = reactive({
             </form>
         </div>
     </dialog>
+    <div v-if="distortionRateTab==='微调'" class="drawer z-10">
+        <input id="trimmer-rules" type="checkbox" class="drawer-toggle"/>
+        <div class="drawer-content">
+            <label for="trimmer-rules"
+                   class="btn btn-outline btn-primary btn-xs fixed top-10 right-3">管理微调规则</label>
+        </div>
+        <div class="drawer-side">
+            <TrimmerRules v-model:clients="clients"/>
+        </div>
+    </div>
     <div v-if="distortionRateTab==='固定'" class="drawer z-10">
         <input id="fixed-rules" type="checkbox" class="drawer-toggle"/>
         <div class="drawer-content">
@@ -403,12 +451,7 @@ const clients = reactive({
                    class="btn btn-outline btn-primary btn-xs fixed top-10 right-3">管理固定规则</label>
         </div>
         <div class="drawer-side">
-            <div class="min-h-full w-full bg-base-200 flex flex-col p-3 gap-3">
-                <div class="flex justify-between items-center">
-                    <label for="fixed-rules" class="btn btn-ghost btn-sm">＜返回</label>
-                    <button class="btn btn-outline btn-primary btn-xs">添加固定规则</button>
-                </div>
-            </div>
+            <FixedRules v-model:clients="clients"/>
         </div>
     </div>
 </template>
