@@ -13,7 +13,7 @@ let currentIndex = 0;
 let currentTrimmerData: TrimmerData[] = [];
 
 const addTrimmerItem = () => {
-    edit.value = true;
+    edit.value = false;
     Object.assign(TrimmerDataItem, {
         trimmer: "",
         note: ""
