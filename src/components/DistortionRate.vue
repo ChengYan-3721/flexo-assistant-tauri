@@ -92,6 +92,9 @@ const computeDistortionRate = () => {
         let num = Number(girth.value);
         if (!num) return;
         let k = k_map.get(thickness.value) || 0;
+        if (distortionRateTab.value === "微调") {
+            k = k_map.get(trimmerDataItem.value.thickness || thickness.value) || 0;
+        }
         distortionRate.value = round(Decimal.sub(100, Decimal.div(k, num)));
         if (distortionRateTab.value === "微调" && trimmer.value) {
             const normalAfter = Decimal.mul(girth.value, Decimal.div(distortionRate.value, 100));
@@ -197,8 +200,8 @@ const recalculate = () => {
         girthChange();
     }
 }
-// 改变小数位数时重新计算
-watch([precision, distortionRateTab], () => {
+// 改变小数位数、切换选项卡、微调误差时重新计算
+watch([precision, distortionRateTab, trimmer], () => {
     recalculate();
 })
 

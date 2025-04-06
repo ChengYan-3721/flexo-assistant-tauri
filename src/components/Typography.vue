@@ -140,8 +140,8 @@ const copy = (value: string) => {
                     </td>
                     <td>{{ item[2] }}</td>
                     <td>{{ item[3] }}</td>
-                    <td>{{ single? item[4] : "-" }}</td>
-                    <td>{{ single? item[5] : "-" }}</td>
+                    <td>{{ (single && spacing)? item[4] : "-" }}</td>
+                    <td>{{ (single && spacing)? item[5] : "-" }}</td>
                 </tr>
                 </tbody>
             </table>

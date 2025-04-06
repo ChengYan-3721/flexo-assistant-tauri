@@ -26,7 +26,6 @@ const gearsChange = () => {
         return;
     }
     fixedDataItem.girth = round(Decimal.mul(fixedDataItem.gears, fixedDataItem.pitch || 3.175));
-    fixedDataItem.gears = fixedDataItem.gears.toString();
 }
 const pitchChange = () => {
     if (toGirth) {
@@ -43,7 +42,6 @@ const girthChange = () => {
         return;
     }
     fixedDataItem.gears = round(Decimal.div(fixedDataItem.girth, fixedDataItem.pitch || 3.175));
-    fixedDataItem.girth = fixedDataItem.girth.toString();
 }
 const addFixedItem = () => {
     edit.value = false;
@@ -191,7 +189,8 @@ const removeFixedItem = (client: Client, index: number) => {
                 </label>
                 <label class="input input-sm">
                     <span class="w-40">齿数*</span>
-                    <input type="number" required v-model="fixedDataItem.gears" @input="gearsChange"/>
+                    <input type="number" required v-model="fixedDataItem.gears" @input="gearsChange"
+                            @change="fixedDataItem.gears = fixedDataItem.gears?.toString()"/>
                     <span class="label w-20">T</span>
                 </label>
                 <label class="select select-sm">
@@ -204,7 +203,8 @@ const removeFixedItem = (client: Client, index: number) => {
                 </label>
                 <label class="input input-sm">
                     <span class="w-40">印刷周长*</span>
-                    <input type="number" step="0.001" required v-model="fixedDataItem.girth" @input="girthChange"/>
+                    <input type="number" step="0.001" required v-model="fixedDataItem.girth" @input="girthChange"
+                           @change="fixedDataItem.girth = fixedDataItem.girth?.toString()"/>
                     <span class="label w-20">mm</span>
                 </label>
                 <label class="select select-sm">
