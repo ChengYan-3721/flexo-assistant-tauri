@@ -175,16 +175,12 @@ const removeFixedItem = (client: Client, index: number) => {
             <fieldset class="fieldset w-xs bg-base-200 border border-base-300 p-2 rounded-box">
                 <legend class="fieldset-legend">柔印印刷机信息(带 * 号为必填项)</legend>
                 <label class="input input-sm">
-                    <span class="w-27">客户名称*</span>
+                    <span class="w-27">客户+印刷机名称*</span>
                     <input required v-model="name" :disabled="edit"/>
                 </label>
                 <label class="input input-sm">
-                    <span class="w-27">印刷机型号</span>
-                    <input v-model="fixedDataItem.machine"/>
-                </label>
-                <label class="input input-sm">
                     <span class="w-40">印刷幅宽</span>
-                    <input v-model="fixedDataItem.width"/>
+                    <input type="number" min="0" v-model="fixedDataItem.width"/>
                     <span class="label w-20">mm</span>
                 </label>
                 <label class="input input-sm">
@@ -222,12 +218,12 @@ const removeFixedItem = (client: Client, index: number) => {
                 </label>
                 <label class="input input-sm">
                     <span class="w-40">版辊数量</span>
-                    <input v-model="fixedDataItem.count"/>
+                    <input type="number" min="0" v-model="fixedDataItem.count"/>
                     <span class="label w-20">根</span>
                 </label>
                 <label class="input input-sm">
                     <span class="w-40">固定变形率*</span>
-                    <input type="number" step="0.001" required v-model="fixedDataItem.distortion_rate"
+                    <input type="number" step="0.000001" required v-model="fixedDataItem.distortion_rate"
                            @change="fixedDataItem.distortion_rate=fixedDataItem.distortion_rate?.toString()"/>
                     <span class="label w-20">%</span>
                 </label>

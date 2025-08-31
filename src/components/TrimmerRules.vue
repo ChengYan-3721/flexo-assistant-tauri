@@ -133,7 +133,7 @@ const removeTrimmerItem = (client: Client, index: number) => {
                 </label>
                 <label class="input input-sm">
                     <span class="w-40">印刷幅宽</span>
-                    <input v-model="TrimmerDataItem.width"/>
+                    <input type="number" min="0" v-model="TrimmerDataItem.width"/>
                     <span class="label w-20">mm</span>
                 </label>
                 <label class="select select-sm">
@@ -151,7 +151,7 @@ const removeTrimmerItem = (client: Client, index: number) => {
                 </label>
                 <label class="input input-sm">
                     <span class="w-40">误差微调*</span>
-                    <input type="number" step="0.1" required v-model="TrimmerDataItem.trimmer"
+                    <input type="number" step="0.001" required v-model="TrimmerDataItem.trimmer"
                            @change="TrimmerDataItem.trimmer=TrimmerDataItem.trimmer?.toString()"/>
                     <span class="label w-20">mm</span>
                 </label>

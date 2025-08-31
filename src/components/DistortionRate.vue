@@ -221,7 +221,6 @@ export interface TrimmerData {
 }
 
 export interface FixedData {
-    machine?: string;
     width?: string;
     gears?: string;
     pitch?: string;
@@ -334,7 +333,7 @@ const trimmerDataChange = (clientChange: boolean) => {
                     <input type="number" v-model="girth" @input="girthChange"/>
                     mm
                 </label>
-                <label class="col-span-4 text-sm">误差微调</label>
+                <label class="col-span-4 text-sm">误差补偿</label>
                 <label class="col-span-8 input input-xs w-30">
                     <input type="number" step="0.1" v-model="trimmer"/>
                     mm
@@ -347,7 +346,7 @@ const trimmerDataChange = (clientChange: boolean) => {
                v-model="distortionRateTab"/>
         <div class="tab-content p-3">
             <div class="grid grid-cols-24 gap-x-2 gap-y-4 items-center">
-                <label class="col-span-5 text-sm">客户</label>
+                <label class="col-span-5 text-sm">印刷机</label>
                 <select class="col-span-8 select select-xs w-30" v-model="fixedData"
                         @change="()=>{fixedDataItem={};fixedDataChange()}">
                     <option v-for="client in clients" v-show="client.fixed_data.length" :label="client.name" :value="client.fixed_data"/>

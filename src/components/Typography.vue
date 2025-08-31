@@ -44,7 +44,7 @@ const pitchChange = () => {
 }
 const computeTableData = () => {
     tableData.length = 0;
-    if (!jump.value) return;
+    if (!jump.value || !Number(jump.value)) return;
     let row = 1000 / Number(jump.value);
     for (let i = 1; i < row + 1; i++) {
         let length = round(Decimal.mul(jump.value, i));
